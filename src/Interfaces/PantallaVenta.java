@@ -7,6 +7,7 @@ import java.awt.Toolkit;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
+import javax.swing.Timer;
 import javax.swing.table.DefaultTableModel;
 
 import Entidades.DetalleVentas;
@@ -25,6 +26,8 @@ import javax.swing.JTable;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class PantallaVenta {
 
@@ -48,6 +51,7 @@ public class PantallaVenta {
 	ArrayList<DetalleVentas> detalleVenta = new ArrayList<DetalleVentas>();
 	private JLabel lblMxn;
 	private JLabel lblMxn_1;
+	private JTextField textField;
 
 	public static void main(String[] args) {
 		EventQueue.invokeLater(new Runnable() {
@@ -95,7 +99,7 @@ public class PantallaVenta {
 		frmSistemaCecyPos.getContentPane().add(btnProductos);
 
 		JButton btnSalir = new JButton("SALIR");
-		btnSalir.setBounds(328, 10, 115, 60);
+		btnSalir.setBounds(522, 10, 115, 60);
 		btnSalir.setIcon(redimensionar(32, 32, "/img/salirt.png"));
 		btnSalir.setVerticalTextPosition(SwingConstants.BOTTOM);
 		btnSalir.setHorizontalTextPosition(SwingConstants.CENTER);
@@ -184,6 +188,29 @@ public class PantallaVenta {
 		btnCobrar.setVerticalAlignment(SwingConstants.CENTER);
 		btnCobrar.setBounds(322, 390, 121, 62);
 		frmSistemaCecyPos.getContentPane().add(btnCobrar);
+		
+		JLabel lblFechaHora = new JLabel("");
+		lblFechaHora.setBounds(354, 15, 158, 12);
+		frmSistemaCecyPos.getContentPane().add(lblFechaHora);
+		
+		JLabel lblNewLabel = new JLabel("Cliente");
+		lblNewLabel.setBounds(143, 34, 44, 12);
+		frmSistemaCecyPos.getContentPane().add(lblNewLabel);
+		
+		textField = new JTextField();
+		textField.setBounds(181, 31, 181, 46);
+		frmSistemaCecyPos.getContentPane().add(textField);
+		textField.setColumns(10);
+		Timer timer = new Timer(1000, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LocalDateTime ahora = LocalDateTime.now();
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm:ss");
+				String fechaHoraFormateada = ahora.format(formatter);
+				lblFechaHora.setText(fechaHoraFormateada);
+			}
+		});
+		timer.start();
 	}
 
 	public ImageIcon redimensionar(int w, int h, String ruta) {
@@ -198,7 +225,8 @@ public class PantallaVenta {
 		codigoBarras = txtCodigoBarras.getText();
 
 		if (codigoBarras.length() == 0) {
-			JOptionPane.showMessageDialog(null, "NO HAS INGRESADO CODIGO DE BARRAS", "ERROR",
+			mensaje("Prductos sin Stock","ERROR");
+			JOptionPane.showMessageDialog(null, "", "ERROR",
 					JOptionPane.QUESTION_MESSAGE, redimensionar(32, 32, "/img/cecy.png"));
 			return;
 		}
@@ -212,13 +240,18 @@ public class PantallaVenta {
 		System.out.println("ID: "+id);
 
 		if (id == -1) {
-			JOptionPane.showMessageDialog(null, "NO EXISTE PRODUCTO", "ERROR", JOptionPane.QUESTION_MESSAGE,
-					redimensionar(32, 32, "/img/cecy.png"));
+			mensaje("Prductos sin Stock","ERROR");
 			return;
 		}
+		
 
 		if (!siEsta(id)) {
-			detalleVenta.add(new DetalleVentas(id, 1));
+			if(buscarProducto(id).getStock()>0){
+				detalleVenta.add(new DetalleVentas(id, 1));
+			}else {
+				mensaje("Prductos sin Stock","ERROR");
+			}
+			
 		} else {
 			incrementaCantidad(id);
 		}
@@ -249,15 +282,17 @@ public class PantallaVenta {
 	}
 
 	public void incrementaCantidad(int idProducto) {
-		int index = -1;
-		for (int i = 0; i < detalleVenta.size(); i++) {
-			if (idProducto == detalleVenta.get(i).getIdProducto()) {
-				index = i;
-			}
-		}
-		detalleVenta.get(index).setCantidad(detalleVenta.get(index).getCantidad() + 1);
+		for(DetalleVentas d: detalleVenta) {
+			if(idProducto == d.getIdProducto()) {
+		if((d.getCantidad()+1)>buscarProducto(idProducto).getStock()) {
+			mensaje("YA NO SE PUEDE AGREGAR MAS CANTIDAD","ERROR");
+		}else {
+			d.setCantidad(d.getCantidad()+1);
+			
+		}	
 	}
-
+	}
+	}
 	public boolean siEsta(int idProducto) {
 		boolean si = false;
 		for (DetalleVentas d : detalleVenta) {
@@ -272,5 +307,9 @@ public class PantallaVenta {
 		Locale localeMexico = new Locale("es", "MX");
 		NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(localeMexico);
 		return formatoMoneda.format(cantidad);
+	}
+	public void mensaje(String msj, String titulo) {
+		JOptionPane.showMessageDialog(null, msj,titulo,JOptionPane.QUESTION_MESSAGE,
+				redimensionar(32, 32, "/img/cecy.png"));
 	}
 }
