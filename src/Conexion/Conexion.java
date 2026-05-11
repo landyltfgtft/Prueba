@@ -8,7 +8,7 @@ public class Conexion {
 	public Connection conectar() {
 		try {
 			cx=DriverManager.getConnection("jdbc:mysql://localhost/puntodeventa","root","");
-			System.out.println("LIKE");
+			System.out.println("LIKE XD");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
